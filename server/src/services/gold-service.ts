@@ -18,20 +18,19 @@ export async function getGoldPrices(facsonArtisan = 0): Promise<GoldPriceSnapsho
 
   if (!res.ok) throw new Error(`GoldAPI error: ${res.status}`)
 
-  const data = await res.json()
+  const data = await res.json() as Record<string, number>
 
-  // GoldAPI retourne directement le prix par gramme par karat en MAD
   const toMad = (usdPerGram: number) =>
     parseFloat(((usdPerGram * USD_TO_MAD) + facsonArtisan).toFixed(2))
 
   const snapshot: GoldPriceSnapshot = {
-    '9k':  toMad(data.price_gram_10k),
-    '14k': toMad(data.price_gram_14k),
-    '18k': toMad(data.price_gram_18k),
-    '21k': toMad(data.price_gram_21k ?? data.price_gram_22k * 0.955),
-    '22k': toMad(data.price_gram_22k),
-    '24k': toMad(data.price_gram_24k),
-    usdPerOunce: data.price,
+    '9k':  toMad(data['price_gram_10k']),
+    '14k': toMad(data['price_gram_14k']),
+    '18k': toMad(data['price_gram_18k']),
+    '21k': toMad(data['price_gram_21k'] ?? data['price_gram_22k'] * 0.955),
+    '22k': toMad(data['price_gram_22k']),
+    '24k': toMad(data['price_gram_24k']),
+    usdPerOunce: data['price'],
     usdToMad:    USD_TO_MAD,
     updatedAt:   new Date().toISOString(),
   }
