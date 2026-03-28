@@ -6,4 +6,4 @@ RUN cd server && npm install
 COPY server/ ./server/
 RUN cd server && npm run build
 EXPOSE 3001
-CMD ["node", "server/dist/src/index.js"]
+CMD ["node", "server/dist/server/src/index.js"]
