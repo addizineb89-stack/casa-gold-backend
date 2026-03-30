@@ -42,6 +42,56 @@ Ne retourne rien d'autre que le JSON.
   return JSON.parse(cleaned) as GeminiAnalysis
 }
 
+// Génère le contenu social media (description + hashtags + hook) pour chaque plateforme
+export async function generateSocialContent(imageBase64: string, mimeType: string, analysis: GeminiAnalysis) {
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-pro' })
+  const goldPrices = await getGoldPrices()
+  const price = analysis.estimatedPriceMad ?? Math.round((analysis.estimatedWeightGrams ?? 5) * goldPrices['18k'])
+
+  const prompt = `
+Tu es un expert en marketing digital pour bijoutiers marocains. Analyse ce bijou et génère du contenu pour les réseaux sociaux.
+
+Informations bijou :
+- Style: ${analysis.style}
+- Type: ${analysis.type}
+- Karat: ${analysis.karat}
+- Prix estimé: ${price} MAD
+- Description: ${analysis.description}
+
+Retourne UNIQUEMENT ce JSON valide :
+{
+  "instagram": {
+    "caption": "légende Instagram captivante en français, max 150 mots, avec emojis",
+    "hook": "première phrase accrocheuse (max 15 mots)",
+    "hashtags": ["liste", "de", "30", "hashtags", "pertinents", "mix", "français", "arabe", "anglais"]
+  },
+  "tiktok": {
+    "caption": "texte TikTok court et viral en français, max 80 mots, avec emojis",
+    "hook": "hook TikTok ultra-accrocheur (max 10 mots)",
+    "hashtags": ["15", "hashtags", "trending", "tiktok"]
+  },
+  "facebook": {
+    "caption": "post Facebook complet en français, max 200 mots, storytelling, avec emojis",
+    "hook": "phrase d'ouverture engageante (max 20 mots)",
+    "hashtags": ["10", "hashtags", "facebook"]
+  },
+  "whatsapp": {
+    "message": "message WhatsApp professionnel pour envoyer à des clients, max 100 mots, inclure le prix ${price} MAD"
+  }
+}
+Ne retourne rien d'autre que le JSON.
+  `.trim()
+
+  const result = await model.generateContent([
+    { inlineData: { data: imageBase64, mimeType } },
+    prompt,
+  ])
+
+  const text = result.response.text().trim()
+  const cleaned = text.replace(/^```json\n?/, '').replace(/\n?```$/, '')
+  return JSON.parse(cleaned)
+}
+
 // Génère un embedding vectoriel d'une image via Gemini Embedding
 export async function generateImageEmbedding(imageUrl: string): Promise<number[]> {
   // Gemini Embedding pour images — utilise le modèle text-embedding-004

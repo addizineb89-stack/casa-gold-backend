@@ -5,6 +5,7 @@ import helmet from 'helmet'
 import goldRouter from './routes/gold-prices'
 import webhookRouter from './routes/ingestion-webhook'
 import visualSearchRouter from './routes/visual-search'
+import socialRouter from './routes/social-content'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -18,6 +19,7 @@ app.use(express.json({ limit: '50mb' }))
 app.use('/api/gold',    goldRouter)
 app.use('/api/webhook', webhookRouter)
 app.use('/api',         visualSearchRouter)
+app.use('/api/social',  socialRouter)
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }))
