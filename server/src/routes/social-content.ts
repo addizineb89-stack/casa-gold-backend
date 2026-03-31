@@ -1,7 +1,6 @@
 import { Router, Request, Response } from 'express'
 import multer from 'multer'
 import { analyzeJewelryImage, generateSocialContent } from '../services/gemini-service'
-import { requireAuth } from '../middleware/auth'
 
 const router = Router()
 const upload = multer({
@@ -17,7 +16,6 @@ const upload = multer({
 // Prend une photo de bijou → retourne description + hashtags + hook pour chaque plateforme
 router.post(
   '/generate',
-  requireAuth,
   upload.single('image'),
   async (req: Request, res: Response) => {
     try {
