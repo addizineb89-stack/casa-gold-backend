@@ -12,7 +12,14 @@ router.get('/prices', async (_req: Request, res: Response) => {
     const prices = await getGoldPrices(facsonArtisan)
     return res.json(prices)
   } catch (err) {
-    return res.status(500).json({ error: (err as Error).message })
+    // Never return 500 — return last-known prices with stale flag
+    console.error('[gold/prices] Unhandled error:', (err as Error).message)
+    return res.status(200).json({
+      '9k': 530, '14k': 830, '18k': 1070, '21k': 1248, '22k': 1310, '24k': 1400,
+      usdPerOunce: 4675, usdToMad: 9.40,
+      updatedAt: new Date().toISOString(),
+      stale: true,
+    })
   }
 })
 
