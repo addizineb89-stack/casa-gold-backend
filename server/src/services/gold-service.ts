@@ -65,41 +65,46 @@ export async function getGoldPrices(facsonArtisan = 0): Promise<GoldPriceSnapsho
   let usdPerOunce: number | null = null
   let stale = false
 
-  // Source 1 : GoldAPI (retourne prix par karat — le plus précis)
-  try {
-    const data = await fetchFromGoldApi()
-    const toMad = (usdPerGram: number) =>
-      parseFloat(((usdPerGram * usdToMad) + facsonArtisan).toFixed(2))
-
-    const snapshot: GoldPriceSnapshot & { stale: boolean } = {
-      '9k':  toMad(data['price_gram_9k'] ?? data['price_gram_10k']),
-      '14k': toMad(data['price_gram_14k']),
-      '18k': toMad(data['price_gram_18k']),
-      '21k': toMad(data['price_gram_21k'] ?? data['price_gram_22k'] * 0.955),
-      '22k': toMad(data['price_gram_22k']),
-      '24k': toMad(data['price_gram_24k']),
-      usdPerOunce: data['price'],
-      usdToMad: Math.round(usdToMad * 100) / 100,
-      updatedAt: new Date().toISOString(),
-      stale: false,
-    }
-    priceCache = { data: snapshot, expiresAt: Date.now() + 10 * 60 * 1000 }
-    return snapshot
-  } catch (e1) {
-    console.warn('[GoldService] GoldAPI failed:', (e1 as Error).message)
-  }
-
-  // Source 2 : MetalpriceAPI (gratuit 100 req/mois)
+  // Source 1 : MetalpriceAPI (clé METALPRICEAPI_KEY, 100 req/mois gratuit)
   try {
     usdPerOunce = await fetchFromMetalpriceApi()
-  } catch (e2) {
-    console.warn('[GoldService] MetalpriceAPI failed:', (e2 as Error).message)
+    console.log('[GoldService] MetalpriceAPI OK:', usdPerOunce)
+  } catch (e1) {
+    console.warn('[GoldService] MetalpriceAPI failed:', (e1 as Error).message)
   }
 
-  // Source 3 : open.er-api XAU (gratuit, sans clé)
+  // Source 2 : GoldAPI (clé GOLDAPI_KEY)
+  if (!usdPerOunce) {
+    try {
+      const data = await fetchFromGoldApi()
+      const toMad = (usdPerGram: number) =>
+        parseFloat(((usdPerGram * usdToMad) + facsonArtisan).toFixed(2))
+
+      const snapshot: GoldPriceSnapshot & { stale: boolean } = {
+        '9k':  toMad(data['price_gram_9k'] ?? data['price_gram_10k']),
+        '14k': toMad(data['price_gram_14k']),
+        '18k': toMad(data['price_gram_18k']),
+        '21k': toMad(data['price_gram_21k'] ?? data['price_gram_22k'] * 0.955),
+        '22k': toMad(data['price_gram_22k']),
+        '24k': toMad(data['price_gram_24k']),
+        usdPerOunce: data['price'],
+        usdToMad: Math.round(usdToMad * 100) / 100,
+        updatedAt: new Date().toISOString(),
+        stale: false,
+      }
+      priceCache = { data: snapshot, expiresAt: Date.now() + 10 * 60 * 1000 }
+      console.log('[GoldService] GoldAPI OK:', data['price'])
+      return snapshot
+    } catch (e2) {
+      console.warn('[GoldService] GoldAPI failed:', (e2 as Error).message)
+    }
+  }
+
+  // Source 3 : open.er-api XAU→USD (gratuit, sans clé)
   if (!usdPerOunce) {
     try {
       usdPerOunce = await fetchFromErApi()
+      console.log('[GoldService] ER-API XAU OK:', usdPerOunce)
     } catch (e3) {
       console.warn('[GoldService] ER-API XAU failed:', (e3 as Error).message)
     }
